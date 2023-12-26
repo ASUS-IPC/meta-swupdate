@@ -2,6 +2,7 @@ SUMMARY="Image updater for Yocto projects"
 DESCRIPTION = "Application for automatic software update from USB Pen"
 SECTION="swupdate"
 DEPENDS += "libconfig zlib"
+RDEPENDS:${PN} = "libgcc"
 
 # SWUpdate licensing is described in the following pages:
 # https://sbabic.github.io/swupdate/licensing.html
@@ -304,7 +305,6 @@ INITSCRIPT_NAME = "swupdate"
 INITSCRIPT_PARAMS = "defaults 70"
 
 SYSTEMD_PACKAGES = "${PN} ${PN}-progress ${PN}-usb ${PN}-check-update"
-SYSTEMD_SERVICE:${PN} = "swupdate.service swupdate.socket"
-SYSTEMD_SERVICE:${PN}-progress = "swupdate-progress.service"
+SYSTEMD_SERVICE:${PN} = "swupdate.socket"
 SYSTEMD_SERVICE:${PN}-usb = "swupdate-usb@.service"
 SYSTEMD_SERVICE:${PN}-check-update = "swupdate-check-update.service"
