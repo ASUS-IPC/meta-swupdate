@@ -31,6 +31,8 @@ SRC_URI = "git://github.com/sbabic/swupdate.git;protocol=https;branch=master \
     file://90-start-progress \
     file://swupdate.cfg \
     file://swu_public.pem \
+    file://swupdate-check-update \
+    file://swupdate-check-update.service \
 "
 
 LTOEXTRA += "-flto-partition=none"
@@ -44,6 +46,7 @@ PACKAGES =+ " \
     ${PN}-tools-ipc \
     ${PN}-usb \
     ${PN}-www \
+    ${PN}-check-update \
 "
 INSANE_SKIP:${PN}-lua = "dev-so"
 
@@ -81,7 +84,9 @@ FILES:${PN}-www = " \
     ${libdir}/swupdate/conf.d/*mongoose* \
     /www/* \
 "
-
+FILES:${PN}-check-update = " \
+    ${systemd_system_unitdir}/swupdate-check-update.service \
+"
 RDEPENDS:${PN}-usb += "${PN}-client"
 
 # The tools package is deprecated, it is an empty meta package for backward compatibility
@@ -262,7 +267,9 @@ do_install () {
     # shell based configuration loader allows to place code snippets into this folder
     install -d ${D}${libdir}/swupdate/conf.d
     install -m 755 ${WORKDIR}/swupdate.sh ${D}${libdir}/swupdate
+    install -m 755 ${WORKDIR}/swupdate-check-update ${D}${libdir}/swupdate
     sed -i 's#@LIBDIR@#${libdir}#g' ${D}${libdir}/swupdate/swupdate.sh
+    sed -i 's#@LIBDIR@#${libdir}#g' ${D}${libdir}/swupdate/swupdate-check-update
     if ${SWUPDATE_MONGOOSE}; then
         install -m 644 ${WORKDIR}/10-mongoose-args ${D}${libdir}/swupdate/conf.d/
     fi
@@ -273,6 +280,8 @@ do_install () {
     install -d ${D}${systemd_unitdir}/system
     install -m 644 ${WORKDIR}/swupdate.service ${D}${systemd_system_unitdir}
     sed -i 's#@LIBDIR@#${libdir}#' ${D}${systemd_system_unitdir}/swupdate.service
+    install -m 644 ${WORKDIR}/swupdate-check-update.service ${D}${systemd_system_unitdir}
+    sed -i 's#@LIBDIR@#${libdir}#' ${D}${systemd_system_unitdir}/swupdate-check-update.service
     install -m 644 ${WORKDIR}/swupdate.socket.tmpl ${D}${systemd_system_unitdir}/swupdate.socket
     sed -e "s,@@SWUPDATE_SOCKET_CTRL_PATH@@,${SWUPDATE_SOCKET_CTRL_PATH},g" \
         -e "s,@@SWUPDATE_SOCKET_PROGRESS_PATH@@,${SWUPDATE_SOCKET_PROGRESS_PATH},g" \
@@ -294,7 +303,8 @@ do_install () {
 INITSCRIPT_NAME = "swupdate"
 INITSCRIPT_PARAMS = "defaults 70"
 
-SYSTEMD_PACKAGES = "${PN} ${PN}-progress ${PN}-usb"
+SYSTEMD_PACKAGES = "${PN} ${PN}-progress ${PN}-usb ${PN}-check-update"
 SYSTEMD_SERVICE:${PN} = "swupdate.service swupdate.socket"
 SYSTEMD_SERVICE:${PN}-progress = "swupdate-progress.service"
 SYSTEMD_SERVICE:${PN}-usb = "swupdate-usb@.service"
+SYSTEMD_SERVICE:${PN}-check-update = "swupdate-check-update.service"

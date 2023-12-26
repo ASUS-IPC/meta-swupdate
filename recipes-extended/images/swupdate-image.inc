@@ -16,6 +16,7 @@ IMAGE_INSTALL = "base-files \
 		util-linux-sfdisk \
 		mmc-utils \
 		e2fsprogs-resize2fs \
+		swupdate-check-update \
 		 "
 
 IMAGE_FSTYPES = "ext4.gz.u-boot ext4 cpio.gz.u-boot"

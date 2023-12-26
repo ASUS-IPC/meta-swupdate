@@ -1,0 +1,9 @@
+[Unit]
+Description=SWUpdate check
+
+[Service]
+Type=oneshot
+ExecStart=@LIBDIR@/swupdate/swupdate-check-update start
+
+[Install]
+WantedBy=multi-user.target
