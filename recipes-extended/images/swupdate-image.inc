@@ -12,11 +12,13 @@ IMAGE_INSTALL = "base-files \
 		libconfig \
 		swupdate \
 		swupdate-www \
-                ${@bb.utils.contains('SWUPDATE_INIT', 'tiny', 'virtual/initscripts-swupdate', 'initscripts sysvinit', d)} \
+		${@bb.utils.contains('SWUPDATE_INIT', 'tiny', 'virtual/initscripts-swupdate', 'initscripts systemd', d)} \
 		util-linux-sfdisk \
+		mmc-utils \
+		e2fsprogs-resize2fs \
 		 "
 
-IMAGE_FSTYPES = "ext4.gz.u-boot"
+IMAGE_FSTYPES = "ext4.gz.u-boot ext4 cpio.gz.u-boot"
 
 inherit image
 
