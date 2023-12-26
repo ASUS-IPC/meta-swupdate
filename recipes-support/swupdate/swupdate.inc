@@ -29,6 +29,8 @@ SRC_URI = "git://github.com/sbabic/swupdate.git;protocol=https;branch=master \
     file://tmpfiles-swupdate.conf \
     file://10-mongoose-args \
     file://90-start-progress \
+    file://swupdate.cfg \
+    file://swu_public.pem \
 "
 
 LTOEXTRA += "-flto-partition=none"
@@ -44,7 +46,6 @@ PACKAGES =+ " \
     ${PN}-www \
 "
 INSANE_SKIP:${PN}-lua = "dev-so"
-wwwdir ?= "/www"
 
 # tools is now an empty meta package for backward compatibility
 ALLOW_EMPTY:${PN}-tools = "1"
@@ -78,7 +79,7 @@ FILES:${PN} += " \
 "
 FILES:${PN}-www = " \
     ${libdir}/swupdate/conf.d/*mongoose* \
-    ${wwwdir}/* \
+    /www/* \
 "
 
 RDEPENDS:${PN}-usb += "${PN}-client"
@@ -130,10 +131,9 @@ python () {
     features = features.splitlines(True)
 
 
-    depends = ''
+    depends = d.getVar('DEPENDS', False)
     pn = d.getVar('PN')
-    rdepends = ''
-    mlprefix = d.getVar("MLPREFIX") or ""
+    rdepends = d.getVar("RDEPENDS:%s" % pn) or ""
 
     if 'CONFIG_REMOTE_HANDLER=y\n' in features:
         depends += ' zeromq'
@@ -184,27 +184,13 @@ python () {
         depends += ' zstd'
 
     if 'CONFIG_DISKPART=y\n' in features:
-        depends += ' util-linux e2fsprogs'
+        depends += ' util-linux'
 
     if 'CONFIG_DELTA=y\n' in features:
         depends += ' zchunk'
 
-    if mlprefix:
-        deps = ' '
-        rdeps = ' '
-        for dep in depends.split():
-            dep = mlprefix + dep + ' '
-            deps += dep
-
-        for rdep in rdepends.split():
-            rdep = mlprefix + dep + ' '
-            rdeps += rdep
-
-        depends = deps
-        repends = rdeps
-
-    d.appendVar('DEPENDS', depends)
-    d.appendVar("RDEPENDS:%s" % pn, rdepends)
+    d.setVar('DEPENDS', depends)
+    d.setVar("RDEPENDS:%s" % pn, rdepends)
 
     if 'CONFIG_MONGOOSE=y\n' in features:
         d.setVar('SWUPDATE_MONGOOSE', 'true')
@@ -213,6 +199,11 @@ python () {
 
     if 'CONFIG_MONGOOSE_WEB_API_V2=y\n' in features:
         d.setVar('SWUPDATE_WWW', 'webapp')
+
+    if 'CONFIG_SIGNED_IMAGES=y\n' in features:
+        d.setVar('SWUPDATE_SIGNED_IMAGES', 'true')
+    else:
+        d.setVar('SWUPDATE_SIGNED_IMAGES', 'false')
 
     # Values not used here might be used in a bbappend
     d.setVar('SWUPDATE_SOCKET_CTRL_PATH', '/tmp/sockinstctrl')
@@ -257,11 +248,11 @@ do_compile() {
 do_install () {
     (cd ${S} && oe_runmake install)
 
-    install -m 0755 -d ${D}${wwwdir}
+    install -m 0755 -d ${D}/www
     if [ -d ${S}/web-app ];then
-        cp -R --no-dereference --preserve=mode,links -v ${S}/examples/www/v2/* ${D}${wwwdir}
+        cp -R --no-dereference --preserve=mode,links -v ${S}/examples/www/v2/* ${D}/www
     else
-        install -m 0755 ${S}/www/* ${D}${wwwdir}
+        install -m 0755 ${S}/www/* ${D}/www
     fi
 
     install -d ${D}${sysconfdir}/init.d
@@ -274,6 +265,10 @@ do_install () {
     sed -i 's#@LIBDIR@#${libdir}#g' ${D}${libdir}/swupdate/swupdate.sh
     if ${SWUPDATE_MONGOOSE}; then
         install -m 644 ${WORKDIR}/10-mongoose-args ${D}${libdir}/swupdate/conf.d/
+    fi
+    if ${SWUPDATE_SIGNED_IMAGES}; then
+        install -m 644 ${WORKDIR}/swupdate.cfg ${D}/${sysconfdir}
+        install -m 644 ${WORKDIR}/swu_public.pem ${D}/${sysconfdir}
     fi
     install -d ${D}${systemd_unitdir}/system
     install -m 644 ${WORKDIR}/swupdate.service ${D}${systemd_system_unitdir}
