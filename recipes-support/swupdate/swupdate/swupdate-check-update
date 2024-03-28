@@ -7,18 +7,18 @@ if [ $? != 0 ];then
     exit 0
 fi
 echo "[Swupdate-check-update]: Data partition mount SUCCESS !" > /dev/kmsg
-sleep 10
+sleep 1
 
-FILE=/mnt/fota/misc/upg_OTA_status
+FILE=/mnt/fota/upg_OTA_status
 if [ ! -f "$FILE" ]; then
-	mkdir -p /mnt/fota/misc
+	mkdir -p /mnt/fota
 fi
 
-if ls /mnt/recovery/update.swu 1> /dev/null 2>&1; then
+if ls /mnt/update.swu 1> /dev/null 2>&1; then
     echo " "
     echo "[Swupdate-check-update]: Starting Software Update"
     echo "------------------------"
-    swupdate -i /mnt/recovery/update.swu -v
+    swupdate -i /mnt/update.swu -v
     if [ $? == 0 ];then
         echo "200" > $FILE
         echo "[Swupdate-check-update]: Update SUCCESS !"
@@ -32,7 +32,7 @@ else
     echo "[Swupdate-check-update]: No update image exist."
 fi
 
-fw_setenv bootslot dualA
+fw_setenv bootslot singlenormal
 reboot
 
 exit 0
