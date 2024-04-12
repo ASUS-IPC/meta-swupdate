@@ -48,7 +48,7 @@ CONFIG_EXTRA_LDLIBS=""
 CONFIG_UBOOT=y
 # CONFIG_BOOTLOADER_NONE is not set
 # CONFIG_BOOTLOADER_GRUB is not set
-CONFIG_UBOOT_FWENV="/etc/fw_env.config"
+CONFIG_UBOOT_FWENV="/data/fota/fw_env.config"
 CONFIG_UBOOT_DEFAULTENV="/etc/u-boot-imx-initial-env"
 # CONFIG_SSL_IMPL_NONE is not set
 CONFIG_SSL_IMPL_OPENSSL=y

@@ -88,6 +88,8 @@ FILES:${PN}-www = " \
 FILES:${PN}-check-update = " \
     ${systemd_system_unitdir}/swupdate-check-update.service \
 "
+FILES:${PN} += "/data"
+
 RDEPENDS:${PN}-usb += "${PN}-client"
 
 # The tools package is deprecated, it is an empty meta package for backward compatibility
@@ -254,6 +256,7 @@ do_compile() {
 do_install () {
     (cd ${S} && oe_runmake install)
 
+    install -m 0755 -d ${D}/data
     install -m 0755 -d ${D}/www
     if [ -d ${S}/web-app ];then
         cp -R --no-dereference --preserve=mode,links -v ${S}/examples/www/v2/* ${D}/www

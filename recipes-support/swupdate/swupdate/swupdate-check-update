@@ -1,24 +1,44 @@
 #!/bin/sh
 echo "Starting Swupdate check update" > /dev/kmsg
-mount /dev/mmcblk0p4 /mnt
 
+BLOCK_DEVICE="/dev/mmcblk0p4"
+mount $BLOCK_DEVICE /data
 if [ $? != 0 ];then
-    echo "[Swupdate-check-update]: Data partition mount FAILURE !" > /dev/kmsg
+    echo "[Swupdate-check-update]: EMMC data partition mount FAILURE !" > /dev/kmsg
     exit 0
 fi
-echo "[Swupdate-check-update]: Data partition mount SUCCESS !" > /dev/kmsg
+echo "[Swupdate-check-update]: EMMC data partition mount SUCCESS !" > /dev/kmsg
 sleep 1
 
-FILE=/mnt/fota/upg_OTA_status
-if [ ! -f "$FILE" ]; then
-	mkdir -p /mnt/fota
+if ! ls /data/update.swu 1> /dev/null 2>&1; then
+    echo "[Swupdate-check-update]: Mount sd partition" > /dev/kmsg
+    BLOCK_DEVICE="/dev/mmcblk1p4"
+    mount $BLOCK_DEVICE /data
+    if [ $? != 0 ];then
+        echo "[Swupdate-check-update]: SD data partition mount FAILURE !" > /dev/kmsg
+        exit 0
+    fi
+    echo "[Swupdate-check-update]: SD data partition mount SUCCESS !" > /dev/kmsg
+    sleep 1
 fi
 
-if ls /mnt/update.swu 1> /dev/null 2>&1; then
+FILE=/data/fota/upg_OTA_status
+if [ ! -f "$FILE" ]; then
+	mkdir -p /data/fota
+fi
+
+if ls /data/update.swu 1> /dev/null 2>&1; then
     echo " "
     echo "[Swupdate-check-update]: Starting Software Update"
     echo "------------------------"
-    swupdate -i /mnt/update.swu -v
+    if [ "$BLOCK_DEVICE" = "/dev/mmcblk1p4" ]; then
+        echo "[Swupdate-check-update]: Update SD"
+        swupdate -i /data/update.swu -e "stable,sd" -v
+    else
+        echo "[Swupdate-check-update]: Update EMMC"
+        swupdate -i /data/update.swu -e "stable,emmc" -v
+    fi
+
     if [ $? == 0 ];then
         echo "200" > $FILE
         echo "[Swupdate-check-update]: Update SUCCESS !"
@@ -32,7 +52,7 @@ else
     echo "[Swupdate-check-update]: No update image exist."
 fi
 
-fw_setenv bootslot singlenormal
+fw_setenv -c /data/fota/fw_env.config bootslot singlenormal
 reboot
 
 exit 0
